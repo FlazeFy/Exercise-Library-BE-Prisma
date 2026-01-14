@@ -12,3 +12,151 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum TransactionStatus {
+  borrowed
+  returned
+  late
+}
+
+enum ScheduleDay {
+  sun
+  mon
+  tue
+  wed
+  thu
+  fri
+  sat
+}
+
+model branch {
+  id              String   @id @default(uuid()) @db.Uuid
+  branch_name     String   @db.VarChar(255)
+  branch_address  String   @db.Text
+
+  // Metadata
+  created_at      DateTime @default(now())
+
+  // Relations
+  staffs          staff[]
+  members         member[]
+  transactions    transaction[]
+}
+
+model staff {
+  id          String   @id @default(uuid()) @db.Uuid
+  branch_id   String   @db.Uuid
+  staff_name  String   @db.VarChar(255)
+  staff_email String   @unique @db.VarChar(255)
+  staff_role  String   @db.VarChar(100)
+
+  // Metadata
+  created_at  DateTime @default(now())
+
+  // Relations
+  branch       branch        @relation(fields: [branch_id], references: [id])
+  transactions transaction[]
+  schedules    schedule[]
+}
+
+model member {
+  id         String   @id @default(uuid()) @db.Uuid
+  branch_id  String   @db.Uuid
+  fullname   String   @db.VarChar(255)
+  email      String   @unique @db.VarChar(255)
+  address    String   @db.Text
+  status     String   @db.VarChar(50)
+
+  // Metadata
+  created_at DateTime @default(now())
+
+  // Relations
+  branch       branch        @relation(fields: [branch_id], references: [id])
+  transactions transaction[]
+}
+
+model transaction {
+  id           String             @id @default(uuid()) @db.Uuid
+  staff_id     String             @db.Uuid
+  member_id    String             @db.Uuid
+  branch_id    String             @db.Uuid
+  total_fine   Int?
+  status       TransactionStatus
+  deadline_at  DateTime
+  returned_at  DateTime?
+
+  // Metadata
+  created_at   DateTime           @default(now())
+
+  // Relations
+  staff            staff             @relation(fields: [staff_id], references: [id])
+  member           member            @relation(fields: [member_id], references: [id])
+  branch           branch            @relation(fields: [branch_id], references: [id])
+  transaction_items transaction_item[]
+}
+
+model transaction_item {
+  id                     String   @id @default(uuid()) @db.Uuid
+  transaction_id         String   @db.Uuid
+  book_id                String   @db.Uuid
+  transaction_item_note  String?  @db.Text
+
+  // Relations
+  transaction transaction @relation(fields: [transaction_id], references: [id])
+  book        book        @relation(fields: [book_id], references: [id])
+
+  @@unique([transaction_id, book_id])
+}
+
+model book {
+  id            String   @id @default(uuid()) @db.Uuid
+  author_id     String   @db.Uuid
+  publisher_id  String   @db.Uuid
+  title         String   @db.VarChar(255)
+  publish_year  Int
+
+  // Metadata
+  created_at    DateTime @default(now())
+
+  // Relations
+  author            author             @relation(fields: [author_id], references: [id])
+  publisher         publisher          @relation(fields: [publisher_id], references: [id])
+  transaction_items transaction_item[]
+}
+
+model author {
+  id          String   @id @default(uuid()) @db.Uuid
+  author_name String   @db.VarChar(255)
+
+  // Metadata
+  created_at  DateTime @default(now())
+
+  // Relations
+  books       book[]
+}
+
+model publisher {
+  id             String   @id @default(uuid()) @db.Uuid
+  publisher_name String   @db.VarChar(255)
+
+  // Metadata
+  created_at     DateTime @default(now())
+
+  // Relations
+  books          book[]
+}
+
+model schedule {
+  id                   String       @id @default(uuid()) @db.Uuid
+  staff_id             String       @db.Uuid
+  schedule_day         ScheduleDay
+  schedule_start_time  DateTime
+  schedule_end_time    DateTime
+  schedule_note        String?      @db.Text
+
+  // Metadata
+  created_at           DateTime     @default(now())
+
+  // Relations
+  staff staff @relation(fields: [staff_id], references: [id])
+}
