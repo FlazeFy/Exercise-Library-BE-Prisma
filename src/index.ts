@@ -8,6 +8,7 @@ import branchRouter from "./routers/branch.router"
 import staffRouter from "./routers/staff.router"
 import memberRouter from "./routers/member.router"
 import bookRouter from "./routers/book.router"
+import transactionRouter from "./routers/transaction.router"
 
 // Load env
 dotenv.config();
@@ -31,6 +32,7 @@ app.use("/api/v1/branchs", branchRouter)
 app.use("/api/v1/staffs", staffRouter)
 app.use("/api/v1/members", memberRouter)
 app.use("/api/v1/books", bookRouter)
+app.use("/api/v1/transactions", transactionRouter)
 
 // Start Server
 app.listen(PORT, () => {
