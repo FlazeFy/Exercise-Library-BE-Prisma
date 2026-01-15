@@ -4,6 +4,8 @@ import dotenv from "dotenv";
 // Router
 import authorRouter from "./routers/author.router"
 import publisherRouter from "./routers/publisher.router"
+import branchRouter from "./routers/branch.router"
+import staffRouter from "./routers/staff.router"
 
 // Load env
 dotenv.config();
@@ -23,6 +25,8 @@ app.get("/", (req: Request, res: Response) => {
 
 app.use("/api/v1/authors", authorRouter)
 app.use("/api/v1/publishers", publisherRouter)
+app.use("/api/v1/branchs", branchRouter)
+app.use("/api/v1/staffs", staffRouter)
 
 // Start Server
 app.listen(PORT, () => {
