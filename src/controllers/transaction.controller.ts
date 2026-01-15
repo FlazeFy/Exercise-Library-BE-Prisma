@@ -181,3 +181,84 @@ export const createTransactionItemController = async (req: Request, res: Respons
         })
     }
 }
+
+export const hardDeleteTransactionItemByIdController = async (req: Request, res: Response) => {
+    try {
+        // Params
+        const id = typeof req.params.id === "string" ? req.params.id : undefined
+
+        // Validation
+        if (!id) {
+            return res.status(400).json({
+                message: "Transaction Item id is required"
+            })
+        }
+
+        // Check existence
+        const existingTransactionItem = await prisma.transaction_item.findUnique({
+            where: { id },
+        })
+        if (!existingTransactionItem) {
+            return res.status(404).json({
+                message: "Transaction Item not found"
+            })
+        }
+
+        // Query
+        await prisma.transaction_item.delete({
+            where: { id },
+        })
+
+        // Success response
+        res.status(200).json({
+            message: "Delete transaction item successful"
+        })
+    } catch (error) {
+        res.status(500).json({
+            message: "Something went wrong",
+            data: error,
+        })
+    }
+}
+
+export const hardDeleteTransactionByIdController = async (req: Request, res: Response) => {
+    try {
+        // Params
+        const id = typeof req.params.id === "string" ? req.params.id : undefined
+
+        // Validation
+        if (!id) {
+            return res.status(400).json({
+                message: "Transaction id is required"
+            })
+        }
+
+        // Check existence
+        const existingTransactionItem = await prisma.transaction.findUnique({
+            where: { id },
+        })
+        if (!existingTransactionItem) {
+            return res.status(404).json({
+                message: "Transaction not found"
+            })
+        }
+
+        // Query
+        await prisma.transaction_item.deleteMany({
+            where: { transaction_id: id },
+        })
+        await prisma.transaction.delete({
+            where: { id },
+        })
+
+        // Success response
+        res.status(200).json({
+            message: "Delete transaction successful"
+        })
+    } catch (error) {
+        res.status(500).json({
+            message: "Something went wrong",
+            data: error,
+        })
+    }
+}
