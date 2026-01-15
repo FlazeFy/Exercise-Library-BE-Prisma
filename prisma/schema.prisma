@@ -150,8 +150,8 @@ model schedule {
   id                   String       @id @default(uuid()) @db.Uuid
   staff_id             String       @db.Uuid
   schedule_day         ScheduleDay
-  schedule_start_time  DateTime
-  schedule_end_time    DateTime
+  schedule_start_time  String       @db.VarChar(5)
+  schedule_end_time    String       @db.VarChar(5)
   schedule_note        String?      @db.Text
 
   // Metadata
