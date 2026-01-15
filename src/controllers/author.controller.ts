@@ -70,3 +70,54 @@ export const hardDeleteAuthorById = async (req: Request, res: Response) => {
         })
     }
 }
+
+export const updateAuthorByIdController = async (req: Request, res: Response) => {
+    try {
+        // Params
+        const id = typeof req.params.id === "string" ? req.params.id : undefined
+
+        // Body
+        const { author_name } = req.body
+
+        // Validation: id
+        if (!id) {
+            return res.status(400).json({
+                message: "Author id is required",
+            })
+        }
+
+        // Validation: name length
+        if (!author_name || author_name.length < 3) {
+            return res.status(400).json({
+                message: "Author name must be at least 3 characters",
+            })
+        }
+
+        // Check existence
+        const existingAuthor = await prisma.author.findUnique({
+            where: { id },
+        })
+        if (!existingAuthor) {
+            return res.status(404).json({
+                message: "Author not found",
+            })
+        }
+
+        // Query
+        const result = await prisma.author.update({
+            where: { id },
+            data: { author_name },
+        })
+
+        // Success response
+        res.status(200).json({
+            message: "Update author successful",
+            data: result,
+        })
+    } catch (error) {
+        res.status(500).json({
+            message: "Something went wrong",
+            data: error,
+        })
+    }
+}
