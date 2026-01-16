@@ -77,7 +77,7 @@ export const updatePublisherByIdController = async (req: Request, res: Response)
 
         // Check duplicate
         const existingPublisherName = await prisma.publisher.findFirst({
-            where: { publisher_name },
+            where: { publisher_name, id: { not: id} },
         })
         if (existingPublisherName) {
             return res.status(409).json({
