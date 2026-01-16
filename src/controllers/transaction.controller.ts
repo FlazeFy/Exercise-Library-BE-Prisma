@@ -82,19 +82,130 @@ export const createTransactionController = async (req: Request, res: Response) =
 
         // Query
         const result = await prisma.transaction.create({
-            data: {
-                staff_id,
-                member_id,
-                branch_id,
-                status,
-                deadline_at: new Date(deadline_at),
-                total_fine: null,
-            },
+            data: { staff_id, member_id, branch_id, status, deadline_at: new Date(deadline_at), total_fine: null }
         })
 
         // Success response
         res.status(201).json({
             message: "Create transaction successful",
+            data: result,
+        })
+    } catch (error) {
+        res.status(500).json({
+            message: "Something went wrong",
+            data: error,
+        })
+    }
+}
+
+export const updateTransactionByIdController = async (req: Request, res: Response) => {
+    try {
+        // Params
+        const id = typeof req.params.id === "string" ? req.params.id : undefined
+
+        // Body
+        const { staff_id, member_id, branch_id, status, deadline_at } = req.body
+
+        // Validation: id
+        if (!id) {
+            return res.status(400).json({
+                message: "Transaction id is required",
+            })
+        }
+
+        // Check existence
+        const existingTransaction = await prisma.transaction.findUnique({
+            where: { id },
+        })
+        if (!existingTransaction) {
+            return res.status(404).json({
+                message: "Transaction not found",
+            })
+        }
+
+        // Validation
+        if (!staff_id) {
+            return res.status(400).json({
+                message: "Staff ID is required",
+                data: null,
+            })
+        }
+        if (!member_id) {
+            return res.status(400).json({
+                message: "Member ID is required",
+                data: null,
+            })
+        }
+        if (!branch_id) {
+            return res.status(400).json({
+                message: "Branch ID is required",
+                data: null,
+            })
+        }
+        if (!status) {
+            return res.status(400).json({
+                message: "Transaction status is required",
+                data: null,
+            })
+        }
+        if (!deadline_at || isNaN(Date.parse(deadline_at))) {
+            return res.status(400).json({
+                message: "Invalid deadline date",
+                data: null,
+            })
+        }
+
+        // Validate staff exists
+        const staff = await prisma.staff.findUnique({
+            where: { id: staff_id },
+        })
+        if (!staff) {
+            return res.status(404).json({
+                message: "Staff not found",
+                data: null,
+            })
+        }
+
+        // Validate member exists
+        const member = await prisma.member.findUnique({
+            where: { id: member_id },
+        })
+        if (!member) {
+            return res.status(404).json({
+                message: "Member not found",
+                data: null,
+            })
+        }
+
+        // Validate branch exists
+        const branch = await prisma.branch.findUnique({
+            where: { id: branch_id },
+        })
+        if (!branch) {
+            return res.status(404).json({
+                message: "Branch not found",
+                data: null,
+            })
+        }
+
+        // Validate status value
+        const validStatuses = ["borrowed", "returned", "late"]
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({
+                message: "Invalid transaction status",
+                data: null,
+            })
+        }
+
+        // Query
+        const result = await prisma.transaction.update({
+            where: { id },
+            data: { staff_id, member_id, branch_id, status, deadline_at: new Date(deadline_at) },
+        })
+
+        // Success response
+        res.status(200).json({
+            message: "Update transaction successful",
             data: result,
         })
     } catch (error) {

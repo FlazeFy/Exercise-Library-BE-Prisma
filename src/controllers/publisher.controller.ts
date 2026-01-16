@@ -43,6 +43,51 @@ export const createPublisherController = async (req: Request, res: Response) => 
     }
 }
 
+export const hardDeletePublisherById = async (req: Request, res: Response) => {
+    try {
+        // Params
+        const id = typeof req.params.id === "string" ? req.params.id : undefined
+
+        // Validation
+        if (!id) {
+            return res.status(400).json({
+                message: "Publisher id is required"
+            })
+        }
+
+        // Check existence
+        const existingPublisher = await prisma.publisher.findUnique({
+            where: { id },
+        })
+        if (!existingPublisher) {
+            return res.status(404).json({
+                message: "Publisher not found"
+            })
+        }
+
+        // Query
+        await prisma.transaction_item.deleteMany({
+            where: { book_id: id },
+        })
+        await prisma.book.deleteMany({
+            where: { publisher_id: id },
+        })
+        await prisma.publisher.delete({
+            where: { id },
+        })
+
+        // Success response
+        res.status(200).json({
+            message: "Delete publisher successful"
+        })
+    } catch (error) {
+        res.status(500).json({
+            message: "Something went wrong",
+            data: error,
+        })
+    }
+}
+
 export const updatePublisherByIdController = async (req: Request, res: Response) => {
     try {
         // Params
