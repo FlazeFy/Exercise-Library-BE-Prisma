@@ -1,5 +1,6 @@
 import { Request, Response } from "express"
 import { prisma } from "../config/prisma"
+import { stringLengthValidator } from "../helpers/validator.helper"
 
 export const createMemberController = async (req: Request, res: Response) => {
     try {
@@ -13,11 +14,10 @@ export const createMemberController = async (req: Request, res: Response) => {
                 data: null,
             })
         }
-        if (!fullname || fullname.length < 3) {
-            return res.status(400).json({
-                message: "Fullname must be at least 3 characters",
-                data: null,
-            })
+        // Validation: name length
+        const validation = stringLengthValidator(fullname, "full name", 3)
+        if (!validation.valid) {
+            return res.status(400).json({ message: validation.message })
         }
         if (!email) {
             return res.status(400).json({
@@ -96,6 +96,16 @@ export const updateMemberByIdController = async (req: Request, res: Response) =>
             })
         }
 
+        // Check existence
+        const existingMember = await prisma.member.findUnique({
+            where: { id },
+        })
+        if (!existingMember) {
+            return res.status(404).json({
+                message: "Member not found",
+            })
+        }
+
         // Validation
         if (!branch_id) {
             return res.status(400).json({
@@ -103,11 +113,9 @@ export const updateMemberByIdController = async (req: Request, res: Response) =>
                 data: null,
             })
         }
-        if (!fullname || fullname.length < 3) {
-            return res.status(400).json({
-                message: "Fullname must be at least 3 characters",
-                data: null,
-            })
+        const validation = stringLengthValidator(fullname, "full name", 3)
+        if (!validation.valid) {
+            return res.status(400).json({ message: validation.message })
         }
         if (!email) {
             return res.status(400).json({
@@ -119,16 +127,6 @@ export const updateMemberByIdController = async (req: Request, res: Response) =>
             return res.status(400).json({
                 message: "Address is required",
                 data: null,
-            })
-        }
-
-        // Check existence
-        const existingMember = await prisma.member.findUnique({
-            where: { id },
-        })
-        if (!existingMember) {
-            return res.status(404).json({
-                message: "Member not found",
             })
         }
 

@@ -1,5 +1,6 @@
 import { Request, Response } from "express"
 import { prisma } from "../config/prisma"
+import { stringLengthValidator } from "../helpers/validator.helper"
 
 export const createPublisherController = async (req: Request, res: Response) => {
     try {
@@ -7,11 +8,9 @@ export const createPublisherController = async (req: Request, res: Response) => 
         const { publisher_name } = req.body
 
         // Validation: name length
-        if (!publisher_name || publisher_name.length < 3) {
-            return res.status(400).json({
-                message: "Publisher name must be at least 3 characters",
-                data: null,
-            })
+        const validation = stringLengthValidator(publisher_name, "publisher name", 3)
+        if (!validation.valid) {
+            return res.status(400).json({ message: validation.message })
         }
 
         // Check duplicate
@@ -103,13 +102,6 @@ export const updatePublisherByIdController = async (req: Request, res: Response)
             })
         }
 
-        // Validation: name length
-        if (!publisher_name || publisher_name.length < 3) {
-            return res.status(400).json({
-                message: "Publisher name must be at least 3 characters",
-            })
-        }
-
         // Check existence
         const existingPublisher = await prisma.publisher.findUnique({
             where: { id },
@@ -118,6 +110,12 @@ export const updatePublisherByIdController = async (req: Request, res: Response)
             return res.status(404).json({
                 message: "Publisher not found",
             })
+        }
+
+        // Validation: name length
+        const validation = stringLengthValidator(publisher_name, "publisher name", 3)
+        if (!validation.valid) {
+            return res.status(400).json({ message: validation.message })
         }
 
         // Check duplicate

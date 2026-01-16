@@ -1,5 +1,6 @@
 import { Request, Response } from "express"
 import { prisma } from "../config/prisma"
+import { stringLengthValidator } from "../helpers/validator.helper"
 
 export const createBranchController = async (req: Request, res: Response) => {
     try {
@@ -7,11 +8,9 @@ export const createBranchController = async (req: Request, res: Response) => {
         const { branch_name, branch_address } = req.body
 
         // Validation
-        if (!branch_name || branch_name.length < 3) {
-            return res.status(400).json({
-                message: "Branch name must be at least 3 characters",
-                data: null,
-            })
+        const validation = stringLengthValidator(branch_name, "branch name", 3)
+        if (!validation.valid) {
+            return res.status(400).json({ message: validation.message })
         }
         if (!branch_address) {
             return res.status(400).json({
@@ -64,20 +63,6 @@ export const updateBranchByIdController = async (req: Request, res: Response) =>
             })
         }
 
-        // Validation
-        if (!branch_name || branch_name.length < 3) {
-            return res.status(400).json({
-                message: "Branch name must be at least 3 characters",
-                data: null,
-            })
-        }
-        if (!branch_address) {
-            return res.status(400).json({
-                message: "Branch address is required",
-                data: null,
-            })
-        }
-
         // Check existence
         const existingBranch = await prisma.branch.findUnique({
             where: { id },
@@ -85,6 +70,18 @@ export const updateBranchByIdController = async (req: Request, res: Response) =>
         if (!existingBranch) {
             return res.status(404).json({
                 message: "Branch not found",
+            })
+        }
+
+        // Validation
+        const validation = stringLengthValidator(branch_name, "branch name", 3)
+        if (!validation.valid) {
+            return res.status(400).json({ message: validation.message })
+        }
+        if (!branch_address) {
+            return res.status(400).json({
+                message: "Branch address is required",
+                data: null,
             })
         }
 

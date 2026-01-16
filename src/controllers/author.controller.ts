@@ -1,5 +1,6 @@
 import { Request, Response } from "express"
 import { prisma } from "../config/prisma"
+import { stringLengthValidator } from "../helpers/validator.helper"
 
 export const createAuthorController = async (req: Request, res: Response) => {
     try {
@@ -7,11 +8,9 @@ export const createAuthorController = async (req: Request, res: Response) => {
         const { author_name } = req.body
 
         // Validation: name length
-        if (!author_name || author_name.length < 3) {
-            return res.status(400).json({
-                message: "Author name must be at least 3 characters",
-                data: null,
-            })
+        const validation = stringLengthValidator(author_name, "author name", 3)
+        if (!validation.valid) {
+            return res.status(400).json({ message: validation.message })
         }
 
         // Query
@@ -55,6 +54,16 @@ export const hardDeleteAuthorById = async (req: Request, res: Response) => {
         }
 
         // Query
+        await prisma.transaction_item.deleteMany({
+            where: { 
+                book: {
+                    author_id: id
+                }
+            },
+        })
+        await prisma.book.deleteMany({
+            where: { author_id: id },
+        })
         await prisma.author.delete({
             where: { id },
         })
@@ -86,13 +95,6 @@ export const updateAuthorByIdController = async (req: Request, res: Response) =>
             })
         }
 
-        // Validation: name length
-        if (!author_name || author_name.length < 3) {
-            return res.status(400).json({
-                message: "Author name must be at least 3 characters",
-            })
-        }
-
         // Check existence
         const existingAuthor = await prisma.author.findUnique({
             where: { id },
@@ -101,6 +103,12 @@ export const updateAuthorByIdController = async (req: Request, res: Response) =>
             return res.status(404).json({
                 message: "Author not found",
             })
+        }
+
+        // Validation: name length
+        const validation = stringLengthValidator(author_name, "author name", 3)
+        if (!validation.valid) {
+            return res.status(400).json({ message: validation.message })
         }
 
         // Query

@@ -93,13 +93,7 @@ export const createScheduleController = async (req: Request, res: Response) => {
 
         // Query
         const result = await prisma.schedule.create({
-            data: {
-                staff_id,
-                schedule_day,
-                schedule_start_time: schedule_start_time,
-                schedule_end_time: schedule_end_time,
-                schedule_note,
-            },
+            data: { staff_id, schedule_day, schedule_start_time: schedule_start_time, schedule_end_time: schedule_end_time, schedule_note },
         })
 
         // Success response

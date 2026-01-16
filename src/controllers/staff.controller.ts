@@ -1,5 +1,6 @@
 import { Request, Response } from "express"
 import { prisma } from "../config/prisma"
+import { stringLengthValidator } from "../helpers/validator.helper"
 
 export const createStaffController = async (req: Request, res: Response) => {
     try {
@@ -13,11 +14,10 @@ export const createStaffController = async (req: Request, res: Response) => {
                 data: null,
             })
         }
-        if (!staff_name || staff_name.length < 3) {
-            return res.status(400).json({
-                message: "Staff name must be at least 3 characters",
-                data: null,
-            })
+        // Validation: name length
+        const validation = stringLengthValidator(staff_name, "staff name", 3)
+        if (!validation.valid) {
+            return res.status(400).json({ message: validation.message })
         }
         if (!staff_email) {
             return res.status(400).json({
@@ -59,12 +59,7 @@ export const createStaffController = async (req: Request, res: Response) => {
 
         // Query
         const result = await prisma.staff.create({
-            data: {
-                branch_id,
-                staff_name,
-                staff_email,
-                staff_role,
-            },
+            data: { branch_id, staff_name, staff_email, staff_role },
         })
 
         // Success response
@@ -103,6 +98,21 @@ export const hardDeleteStaffById = async (req: Request, res: Response) => {
         }
 
         // Query
+        await prisma.$transaction([
+            prisma.transaction_item.deleteMany({
+                where: {
+                    transaction: {
+                        staff_id: id,
+                    },
+                },
+            }),        
+            prisma.transaction.deleteMany({
+                where: { staff_id: id },
+            }),
+        ])
+        await prisma.schedule.deleteMany({
+            where: { staff_id: id },
+        })
         await prisma.staff.delete({
             where: { id },
         })

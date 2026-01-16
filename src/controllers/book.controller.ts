@@ -1,5 +1,6 @@
 import { Request, Response } from "express"
 import { prisma } from "../config/prisma"
+import { stringLengthValidator, yearValidator } from "../helpers/validator.helper"
 
 export const createBookController = async (req: Request, res: Response) => {
     try {
@@ -19,17 +20,13 @@ export const createBookController = async (req: Request, res: Response) => {
                 data: null,
             })
         }
-        if (!title || title.length < 3) {
-            return res.status(400).json({
-                message: "Book title must be at least 3 characters",
-                data: null,
-            })
+        const validationTitle = stringLengthValidator(title, "title", 3)
+        if (!validationTitle.valid) {
+            return res.status(400).json({ message: validationTitle.message })
         }
-        if (!publish_year || publish_year < 1000 || publish_year > new Date().getFullYear()) {
-            return res.status(400).json({
-                message: "Invalid publish year",
-                data: null,
-            })
+        const validationYear = yearValidator(publish_year, 'publish')
+        if (!validationYear.valid) {
+            return res.status(400).json({ message: validationYear.message })
         }
 
         // Validate author exists
@@ -56,12 +53,7 @@ export const createBookController = async (req: Request, res: Response) => {
 
         // Query
         const result = await prisma.book.create({
-            data: {
-                author_id,
-                publisher_id,
-                title,
-                publish_year,
-            },
+            data: { author_id, publisher_id, title, publish_year }
         })
 
         // Success response
