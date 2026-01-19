@@ -216,6 +216,87 @@ export const updateTransactionByIdController = async (req: Request, res: Respons
     }
 }
 
+export const updateTransactionItemByIdController = async (req: Request, res: Response) => {
+    try {
+        // Params
+        const id = typeof req.params.id === "string" ? req.params.id : undefined
+
+        // Body
+        const { transaction_id, book_id, transaction_item_note } = req.body
+
+        // Validation: id
+        if (!id) {
+            return res.status(400).json({
+                message: "Transaction id is required",
+            })
+        }
+
+        // Check existence
+        const existingTransaction = await prisma.transaction_item.findUnique({
+            where: { id },
+        })
+        if (!existingTransaction) {
+            return res.status(404).json({
+                message: "Transaction item not found",
+            })
+        }
+
+        // Validate transaction exists
+        const transaction = await prisma.transaction.findUnique({
+            where: { id: transaction_id },
+        })
+        if (!transaction) {
+            return res.status(404).json({
+                message: "Transaction not found",
+                data: null,
+            })
+        }
+
+        // Validate book exists
+        const book = await prisma.book.findUnique({
+            where: { id: book_id },
+        })
+        if (!book) {
+            return res.status(404).json({
+                message: "Book not found",
+                data: null,
+            })
+        }
+
+        // Check duplicate transaction item
+        const existingItem = await prisma.transaction_item.findFirst({
+            where: {
+                transaction_id,
+                book_id,
+                id: { not: id }
+            },
+        })
+        if (existingItem) {
+            return res.status(409).json({
+                message: "This book already added to the transaction",
+                data: null,
+            })
+        }
+
+        // Query
+        const result = await prisma.transaction_item.update({
+            where: { id },
+            data: { transaction_id, book_id, transaction_item_note },
+        })
+
+        // Success response
+        res.status(200).json({
+            message: "Update transaction item successful",
+            data: result,
+        })
+    } catch (error) {
+        res.status(500).json({
+            message: "Something went wrong",
+            data: error,
+        })
+    }
+}
+
 export const createTransactionItemController = async (req: Request, res: Response) => {
     try {
         // Body
