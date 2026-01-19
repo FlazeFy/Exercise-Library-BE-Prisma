@@ -2,6 +2,64 @@ import { Request, Response } from "express"
 import { prisma } from "../config/prisma"
 import { stringLengthValidator } from "../helpers/validator.helper"
 
+export const getAllStaff = async (req: Request, res: Response) => {
+    try {
+        // Query
+        let where: any = {}
+        const limit = Number(req.query.limit) || 2
+        const page = Number(req.query.page) || 1
+        
+        if (req.query.search) {
+            where = {
+                OR: [
+                    { staff_name: { contains: String(req.query.search), mode: 'insensitive' } },
+                    { staff_email: { contains: String(req.query.search), mode: 'insensitive' } },
+                    { staff_role: { contains: String(req.query.search), mode: 'insensitive' } },
+                ]
+            }
+        }
+
+        const result = await prisma.staff.findMany({
+            where,
+            include: {
+                schedules: {
+                    omit: {
+                        id: true,
+                        staff_id: true,
+                        created_at: true
+                    }
+                }
+            },
+            skip: (page - 1) * limit,
+            take: limit,
+            omit: {
+                branch_id: true
+            },
+        })
+          
+        const finalRes = result.map(staff => ({
+            ...staff,
+            schedules: staff.schedules.map(dt => ({
+                schedule_day: dt.schedule_day,
+                schedule_time: `${dt.schedule_start_time} - ${dt.schedule_end_time}`,
+                schedule_note: dt.schedule_note
+            }))
+        }))
+
+        // Success response
+        const isFound = finalRes && finalRes.length > 0
+        res.status(isFound ? 200 : 404).json({
+            message: `Fetch staff ${isFound ? 'successfull' : 'failed'}`,
+            data: isFound ? finalRes : null,
+        })
+    } catch (error) {
+        res.status(500).json({
+            message: "Something went wrong",
+            data: error,
+        })
+    }
+}
+
 export const createStaffController = async (req: Request, res: Response) => {
     try {
         // Body

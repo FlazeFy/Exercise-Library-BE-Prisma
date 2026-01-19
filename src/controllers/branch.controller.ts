@@ -4,6 +4,7 @@ import { stringLengthValidator } from "../helpers/validator.helper"
 
 export const getAllBranch = async (req: Request, res: Response) => {
     try {
+        // Query
         let where: any = {}
         const limit = Number(req.query.limit) || 2
         const page = Number(req.query.page) || 1
@@ -33,6 +34,64 @@ export const getAllBranch = async (req: Request, res: Response) => {
         res.status(500).json({
             message: "Something went wrong",
             data: error,
+        })
+    }
+}
+
+export const getBranchMemberByBranchID = async (req: Request, res: Response) => {
+    try {
+        const id = typeof req.params.id === "string" ? req.params.id : undefined
+        const limit = Number(req.query.limit) || 2
+        const page = Number(req.query.page) || 1
+        let where: any = {}
+
+        if (id) {
+            where.id = id
+        }
+        if (req.query.search) {
+            where.members = {
+                some: {
+                    OR: [
+                        { fullname: { contains: String(req.query.search), mode: 'insensitive' } },
+                        { email: { contains: String(req.query.search), mode: 'insensitive' } }
+                    ]
+                }
+            }
+        }
+
+        const result = await prisma.branch.findMany({
+            where,
+            include: {
+                members: {
+                    omit: {
+                        id: true,
+                        branch_id: true,
+                        created_at: true
+                    }
+                }
+            },
+            skip: (page - 1) * limit,
+            take: limit
+        })
+
+        let finalResult: any = null
+        if (result && result.length > 0) {
+            const branch = result[0] 
+            finalResult = {
+                ...branch,
+                members: branch.members && branch.members.length > 0 ? branch.members : null
+            }
+        }
+
+        const isFound = !!finalResult
+        res.status(isFound ? 200 : 404).json({
+            message: `Fetch branch's member ${isFound ? 'successfull' : 'failed'}`,
+            data: finalResult
+        })
+    } catch (error) {
+        res.status(500).json({
+            message: "Something went wrong",
+            data: error
         })
     }
 }
