@@ -1,8 +1,9 @@
 import { Router } from "express";
-import { createTransactionController, createTransactionItemController, hardDeleteTransactionItemByIdController, hardDeleteTransactionByIdController, updateTransactionByIdController, updateTransactionItemByIdController } from "../controllers/transaction.controller";
+import { createTransactionController, createTransactionItemController, hardDeleteTransactionItemByIdController, hardDeleteTransactionByIdController, updateTransactionByIdController, updateTransactionItemByIdController, getAllTransactionController } from "../controllers/transaction.controller";
 
 const router = Router()
 
+router.get("/", getAllTransactionController)
 router.post("/", createTransactionController)
 router.post("/item", createTransactionItemController)
 router.put("/:id", updateTransactionByIdController)

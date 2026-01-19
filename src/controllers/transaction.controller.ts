@@ -1,6 +1,49 @@
 import { Request, Response } from "express"
 import { prisma } from "../config/prisma"
 
+export const getAllTransactionController = async (req: Request, res: Response) => {
+    try {
+        const limit = Number(req.query.limit) || 2
+        const page = Number(req.query.page) || 1
+
+        const result = await prisma.transaction.findMany({
+            include: {
+                transaction_items: {
+                    omit: { id: true, book_id: true, transaction_id: true },
+                    include: {
+                        book: {
+                            omit: { id: true, created_at: true, author_id: true, publisher_id: true }
+                        }
+                    }
+                },
+                staff: {
+                    omit: { id: true, created_at: true, branch_id: true, staff_role: true }
+                },
+                branch: {
+                    omit: { id: true, created_at: true }
+                }
+            },
+            omit: {
+                staff_id: true, member_id: true, branch_id: true
+            },
+            skip: (page - 1) * limit,
+            take: limit
+        })
+
+        // Success response
+        const isFound = result && result.length > 0
+        res.status(isFound ? 200 : 404).json({
+            message: `Fetch transaction ${isFound ? 'successfull' : 'failed'}`,
+            data: isFound ? result : null,
+        })
+    } catch (error) {
+        res.status(500).json({
+            message: "Something went wrong",
+            data: error,
+        })
+    }
+}
+
 export const createTransactionController = async (req: Request, res: Response) => {
     try {
         // Body
