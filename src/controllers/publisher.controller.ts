@@ -2,6 +2,36 @@ import { Request, Response } from "express"
 import { prisma } from "../config/prisma"
 import { stringLengthValidator } from "../helpers/validator.helper"
 
+export const getAllPublisher = async (req: Request, res: Response) => {
+    try {
+        let where: any = {}
+        const limit = Number(req.query.limit) || 2
+        const page = Number(req.query.page) || 1
+        
+        if (req.query.search) {
+            where = { publisher_name: { contains: String(req.query.search), mode: 'insensitive' } }
+        }
+
+        const result = await prisma.publisher.findMany({
+            where,
+            skip: (page - 1) * limit,
+            take: limit
+        })
+
+        // Success response
+        const isFound = result && result.length > 0
+        res.status(isFound ? 200 : 404).json({
+            message: `Fetch publisher ${isFound ? 'successfull' : 'failed'}`,
+            data: isFound ? result : null,
+        })
+    } catch (error) {
+        res.status(500).json({
+            message: "Something went wrong",
+            data: error,
+        })
+    }
+}
+
 export const createPublisherController = async (req: Request, res: Response) => {
     try {
         // Body

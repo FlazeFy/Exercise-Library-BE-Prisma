@@ -1,8 +1,9 @@
 import { Router } from "express";
-import { createPublisherController, hardDeletePublisherById, updatePublisherByIdController } from "../controllers/publisher.controller";
+import { getAllPublisher, createPublisherController, hardDeletePublisherById, updatePublisherByIdController } from "../controllers/publisher.controller";
 
 const router = Router()
 
+router.get("/", getAllPublisher)
 router.post("/", createPublisherController)
 router.delete("/:id", hardDeletePublisherById)
 router.put("/:id", updatePublisherByIdController)
