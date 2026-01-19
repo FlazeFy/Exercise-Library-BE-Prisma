@@ -68,3 +68,45 @@ export const createBookController = async (req: Request, res: Response) => {
         })
     }
 }
+
+export const hardDeleteBookById = async (req: Request, res: Response) => {
+    try {
+        // Params
+        const id = typeof req.params.id === "string" ? req.params.id : undefined
+
+        // Validation
+        if (!id) {
+            return res.status(400).json({
+                message: "Book id is required"
+            })
+        }
+
+        // Check existence
+        const existingBook = await prisma.book.findUnique({
+            where: { id },
+        })
+        if (!existingBook) {
+            return res.status(404).json({
+                message: "Book not found"
+            })
+        }
+
+        // Query
+        await prisma.transaction_item.deleteMany({
+            where: { book_id: id },
+        })
+        await prisma.book.delete({
+            where: { id },
+        })
+
+        // Success response
+        res.status(200).json({
+            message: "Delete book successful"
+        })
+    } catch (error) {
+        res.status(500).json({
+            message: "Something went wrong",
+            data: error,
+        })
+    }
+}

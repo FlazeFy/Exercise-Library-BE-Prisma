@@ -168,3 +168,54 @@ export const updateMemberByIdController = async (req: Request, res: Response) =>
         })
     }
 }
+
+export const hardDeleteMemberById = async (req: Request, res: Response) => {
+    try {
+        // Params
+        const id = typeof req.params.id === "string" ? req.params.id : undefined
+
+        // Validation
+        if (!id) {
+            return res.status(400).json({
+                message: "Member id is required"
+            })
+        }
+
+        // Check existence
+        const existingMember = await prisma.member.findUnique({
+            where: { id },
+        })
+        if (!existingMember) {
+            return res.status(404).json({
+                message: "Member not found"
+            })
+        }
+
+        // Query
+        await prisma.$transaction([
+            prisma.transaction_item.deleteMany({
+                where: {
+                    transaction: {
+                        member_id: id,
+                    },
+                },
+            }),        
+            prisma.transaction.deleteMany({
+                where: { member_id: id },
+            }),
+        ])
+        await prisma.member.delete({
+            where: { id },
+        })
+
+        // Success response
+        res.status(200).json({
+            message: "Delete member successful"
+        })
+    } catch (error) {
+        res.status(500).json({
+            message: "Something went wrong",
+            data: error,
+        })
+    }
+}
