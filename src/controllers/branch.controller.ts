@@ -114,3 +114,69 @@ export const updateBranchByIdController = async (req: Request, res: Response) =>
         })
     }
 }
+
+export const hardDeleteBranchByIdController = async (req: Request, res: Response) => {
+    try {
+        // Params
+        const id = typeof req.params.id === "string" ? req.params.id : undefined
+
+        // Validation
+        if (!id) {
+            return res.status(400).json({
+                message: "Branch id is required"
+            })
+        }
+
+        // Check existence
+        const existingBranch = await prisma.branch.findUnique({
+            where: { id },
+        })
+        if (!existingBranch) {
+            return res.status(404).json({
+                message: "Branch not found"
+            })
+        }
+
+        // Query
+        await prisma.$transaction([
+            prisma.transaction_item.deleteMany({
+                where: {
+                    transaction: {
+                        branch_id: id,
+                    },
+                },
+            }),        
+            prisma.transaction.deleteMany({
+                where: { branch_id: id },
+            }),
+        ])
+        await prisma.$transaction([
+            prisma.schedule.deleteMany({
+                where: {
+                    staff: {
+                        branch_id: id,
+                    },
+                },
+            }),        
+            prisma.staff.deleteMany({
+                where: { branch_id: id },
+            }),
+        ])
+        await prisma.member.deleteMany({
+            where: { branch_id: id },
+        })
+        await prisma.branch.delete({
+            where: { id },
+        })
+
+        // Success response
+        res.status(200).json({
+            message: "Delete branch successful"
+        })
+    } catch (error) {
+        res.status(500).json({
+            message: "Something went wrong",
+            data: error,
+        })
+    }
+}

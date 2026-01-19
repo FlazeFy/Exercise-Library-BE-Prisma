@@ -75,6 +75,88 @@ export const createStaffController = async (req: Request, res: Response) => {
     }
 }
 
+export const updateStaffByIdController = async (req: Request, res: Response) => {
+    try {
+        // Params
+        const id = typeof req.params.id === "string" ? req.params.id : undefined
+
+        // Body
+        const { branch_id, staff_name, staff_email, staff_role } = req.body
+
+        // Validation: id
+        if (!id) {
+            return res.status(400).json({
+                message: "Staff id is required",
+            })
+        }
+
+        // Check existence
+        const existingStaff = await prisma.staff.findUnique({
+            where: { id },
+        })
+        if (!existingStaff) {
+            return res.status(404).json({
+                message: "Staff not found",
+            })
+        }
+
+        // Validation
+        if (!branch_id) {
+            return res.status(400).json({
+                message: "Branch ID is required",
+                data: null,
+            })
+        }
+        const validation = stringLengthValidator(staff_name, "staff name", 3)
+        if (!validation.valid) {
+            return res.status(400).json({ message: validation.message })
+        }
+        if (!staff_email) {
+            return res.status(400).json({
+                message: "Staff Email is required",
+                data: null,
+            })
+        }
+
+        // Check email uniqueness
+        const existingEmailStaff = await prisma.staff.findFirst({
+            where: { staff_email, id: { not: id } },
+        })
+        if (existingEmailStaff) {
+            return res.status(409).json({
+                message: "Email already exists",
+                data: null,
+            })
+        }
+
+        // Validate staff role
+        const validRoles = ["admin", "librarian", "staff"]
+        if (!validRoles.includes(staff_role)) {
+            return res.status(400).json({
+                message: "Invalid staff role",
+                data: null,
+            })
+        }
+
+        // Query
+        const result = await prisma.staff.update({
+            where: { id },
+            data: { branch_id, staff_name, staff_email, staff_role },
+        })
+
+        // Success response
+        res.status(200).json({
+            message: "Update staff successful",
+            data: result,
+        })
+    } catch (error) {
+        res.status(500).json({
+            message: "Something went wrong",
+            data: error,
+        })
+    }
+}
+
 export const hardDeleteStaffById = async (req: Request, res: Response) => {
     try {
         // Params
