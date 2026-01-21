@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 // Router
 import authorRouter from "./routers/author.router"
+import authRouter from "./routers/auth.router"
 import publisherRouter from "./routers/publisher.router"
 import branchRouter from "./routers/branch.router"
 import staffRouter from "./routers/staff.router"
@@ -27,6 +28,7 @@ app.get("/", (req: Request, res: Response) => {
     res.status(200).send("Hello world")
 });
 
+app.use("/api/v1/auth", authRouter)
 app.use("/api/v1/authors", authorRouter)
 app.use("/api/v1/publishers", publisherRouter)
 app.use("/api/v1/branchs", branchRouter)
