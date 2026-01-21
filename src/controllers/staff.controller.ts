@@ -1,5 +1,6 @@
 import { Request, Response } from "express"
 import { prisma } from "../config/prisma"
+import { hashPassword } from "../helpers/password.helper"
 import { stringLengthValidator } from "../helpers/validator.helper"
 
 export const getAllStaff = async (req: Request, res: Response) => {
@@ -63,7 +64,7 @@ export const getAllStaff = async (req: Request, res: Response) => {
 export const createStaffController = async (req: Request, res: Response) => {
     try {
         // Body
-        const { branch_id, staff_name, staff_email, staff_role } = req.body
+        const { branch_id, staff_name, staff_email, staff_role, password } = req.body
 
         // Validation
         if (!branch_id) {
@@ -115,15 +116,22 @@ export const createStaffController = async (req: Request, res: Response) => {
             })
         }
 
+        // Validation: name length
+        const validationPassword = stringLengthValidator(password, "password", 6)
+        if (!validationPassword.valid) {
+            return res.status(400).json({ message: validationPassword.message })
+        }
+
         // Query
         const result = await prisma.staff.create({
-            data: { branch_id, staff_name, staff_email, staff_role },
+            data: { branch_id, staff_name, staff_email, staff_role, password: await hashPassword(password) },
         })
 
         // Success response
+        const { password : _, ...finalResult } = result
         res.status(201).json({
             message: "Create staff successful",
-            data: result,
+            data: finalResult,
         })
     } catch (error) {
         res.status(500).json({

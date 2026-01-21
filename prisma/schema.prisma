@@ -49,6 +49,7 @@ model staff {
   staff_name  String   @db.VarChar(255)
   staff_email String   @unique @db.VarChar(255)
   staff_role  String   @db.VarChar(100)
+  password    String?  @db.VarChar(500)
 
   // Metadata
   created_at  DateTime @default(now())
