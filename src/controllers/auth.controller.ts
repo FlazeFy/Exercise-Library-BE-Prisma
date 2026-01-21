@@ -26,7 +26,7 @@ export const login = async (req: Request, res: Response) => {
         }
 
         // Auth token
-        const token = createToken({ id: account.id })
+        const token = createToken({ id: account.id, role: account.staff_role })
         res.status(200).send({
             name: account.staff_name,
             email: account.staff_email,
